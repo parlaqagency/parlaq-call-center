@@ -16,7 +16,8 @@ export function useSocket() {
     if (initialized.current) return;
     initialized.current = true;
 
-    socket = io('http://localhost:3001');
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    socket = io(backendUrl);
 
     socket.on('inbound_call', (data) => {
       addInboundCall(data);
