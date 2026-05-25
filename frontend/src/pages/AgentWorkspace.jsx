@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Phone, PhoneOff, Mic, MicOff, PhoneIncoming, PhoneOutgoing,
@@ -1408,6 +1409,7 @@ function StatusToggle({ status, loading, onOpen, onClose }) {
 
 // ── Main Workspace ────────────────────────────────────────────────
 export default function AgentWorkspace() {
+  const navigate          = useNavigate();
   const agent             = useAuthStore(s => s.agent);
   const logout            = useAuthStore(s => s.logout);
   const updateAgentStatus = useAuthStore(s => s.updateAgentStatus);
@@ -1603,7 +1605,7 @@ export default function AgentWorkspace() {
           </div>
 
           <button
-            onClick={() => { logout(); window.location.href = '/login'; }}
+            onClick={() => { logout(); navigate('/login'); }}
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50"
           >
             <LogOut size={13} />
