@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Phone, Users, UserCheck, BarChart2, LogOut, Calendar, Zap, X } from 'lucide-react';
+import { LayoutDashboard, Phone, Users, UserCheck, BarChart2, LogOut, Calendar, Zap, X, Mic } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 const STATUS_DOT = {
@@ -23,6 +23,7 @@ export default function Sidebar({ onClose }) {
     ...(isAdmin ? [
       { to: '/campaigns', icon: Zap, label: 'Kampanyalar' },
       { to: '/agents',    icon: UserCheck, label: 'Çalışanlar' },
+      { to: '/recordings', icon: Mic,       label: 'Ses Kayıtları' },
     ] : []),
     { to: '/reports', icon: BarChart2, label: 'Raporlar' },
   ];

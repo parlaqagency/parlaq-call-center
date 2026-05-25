@@ -14,6 +14,7 @@ import SetupAdmin from './pages/SetupAdmin';
 import AgentWorkspace from './pages/AgentWorkspace';
 import Appointments from './pages/Appointments';
 import Campaigns from './pages/Campaigns';
+import Recordings from './pages/Recordings';
 import IncomingCallAlert from './components/IncomingCallAlert';
 import SoftphoneWidget from './components/SoftphoneWidget';
 import ToastContainer from './components/Toast';
@@ -29,6 +30,7 @@ const PAGE_TITLES = {
   '/reports': 'Raporlar',
   '/appointments': 'Randevular',
   '/campaigns': 'Kampanyalar',
+  '/recordings': 'Ses Kayıtları',
 };
 
 function InitialAppLoader() {
@@ -184,6 +186,9 @@ function AppInner() {
         } />
         <Route path="/campaigns" element={
           <AdminRoute><AdminLayout path="/campaigns"><Campaigns /></AdminLayout></AdminRoute>
+        } />
+        <Route path="/recordings" element={
+          <AdminRoute><AdminLayout path="/recordings"><Recordings /></AdminLayout></AdminRoute>
         } />
       </Routes>
 

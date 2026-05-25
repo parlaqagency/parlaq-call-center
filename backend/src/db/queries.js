@@ -40,11 +40,12 @@ const calls = {
     const set = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
     return pool.query(`UPDATE call_logs SET ${set} WHERE unique_id = $${keys.length + 1} RETURNING *`, [...values, unique_id]);
   },
-  getHistory: ({ limit = 50, offset = 0, agentId, phone } = {}) => {
+  getHistory: ({ limit = 50, offset = 0, agentId, phone, onlyRecordings } = {}) => {
     let where = 'WHERE 1=1';
     const params = [];
     if (agentId) { params.push(agentId); where += ` AND cl.agent_id = $${params.length}`; }
     if (phone) { params.push(`%${phone}%`); where += ` AND cl.customer_phone LIKE $${params.length}`; }
+    if (onlyRecordings) { where += ` AND cl.status = 'answered'`; }
     params.push(limit, offset);
     return pool.query(
       `SELECT cl.*, a.name as agent_name FROM call_logs cl LEFT JOIN agents a ON cl.agent_id = a.id ${where} ORDER BY cl.created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,

@@ -70,8 +70,14 @@ router.post('/transfer', async (req, res) => {
 
 router.get('/history', async (req, res) => {
   try {
-    const { limit, offset, agentId, phone } = req.query;
-    const result = await calls.getHistory({ limit, offset, agentId, phone });
+    const { limit, offset, agentId, phone, onlyRecordings } = req.query;
+    const result = await calls.getHistory({ 
+      limit, 
+      offset, 
+      agentId, 
+      phone, 
+      onlyRecordings: onlyRecordings === 'true' 
+    });
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
