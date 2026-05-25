@@ -47,7 +47,7 @@ function useAgentSocket({ onInbound, onHangup, onStats, onQueueUpdated }) {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    const socket = io('http://localhost:3001');
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001');
     socket.on('inbound_call', onInbound);
     socket.on('call_hangup', onHangup);
     socket.on('call_answered', onStats);

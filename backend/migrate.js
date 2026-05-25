@@ -50,7 +50,8 @@ async function run() {
 
   await pool.query(`ALTER TABLE call_logs ADD COLUMN IF NOT EXISTS disposition VARCHAR(50)`);
   await pool.query(`ALTER TABLE call_logs ADD COLUMN IF NOT EXISTS callback_at TIMESTAMP`);
-  console.log('✓ call_logs: disposition + callback_at kolonları hazır');
+  await pool.query(`ALTER TABLE call_logs ADD COLUMN IF NOT EXISTS recording_url TEXT`);
+  console.log('✓ call_logs: disposition + callback_at + recording_url kolonları hazır');
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS appointments (

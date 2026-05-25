@@ -214,7 +214,7 @@ export default function Dashboard() {
     fetchAgents();
     const id = setInterval(fetchTodayStats, 30000);
 
-    const socket = io('http://localhost:3001');
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001');
     socketRef.current = socket;
 
     socket.on('agent_status_changed', ({ agentId, status, break_reason, callPhone, callStartedAt }) => {

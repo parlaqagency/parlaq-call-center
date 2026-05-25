@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Download, Search, X, BarChart2, PhoneIncoming, PhoneOutgoing, PhoneMissed, Users } from 'lucide-react';
+import { Download, Search, X, BarChart2, PhoneIncoming, PhoneOutgoing, PhoneMissed, Users, Play, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { useCallStore } from '../store/callStore';
 import StatsChart from '../components/StatsChart';
+import MiniAudioPlayer from '../components/Calls/MiniAudioPlayer';
 
 function formatDuration(s) {
   if (!s) return '—';
@@ -143,12 +144,46 @@ export default function Reports() {
   const [phone, setPhone] = useState('');
   const [period, setPeriod] = useState('today');
 
+  const [activePlayerId, setActivePlayerId] = useState(null);
+  const [recordingUrls, setRecordingUrls] = useState({});
+  const [loadingId, setLoadingId] = useState(null);
+  const [errorId, setErrorId] = useState(null);
+
   useEffect(() => {
     fetchHistory();
     fetchTodayStats();
   }, []);
 
   const search = () => fetchHistory({ phone: phone || undefined });
+
+  const handlePlayClick = async (callId, existingUrl) => {
+    if (activePlayerId === callId) {
+      setActivePlayerId(null);
+      return;
+    }
+
+    if (existingUrl || recordingUrls[callId]) {
+      setActivePlayerId(callId);
+      return;
+    }
+
+    setLoadingId(callId);
+    setErrorId(null);
+    try {
+      const { data } = await axios.get(`/api/calls/${callId}/recording`);
+      if (data.recording_url) {
+        setRecordingUrls(prev => ({ ...prev, [callId]: data.recording_url }));
+        setActivePlayerId(callId);
+      } else {
+        setErrorId(callId);
+      }
+    } catch (err) {
+      console.error('[Reports] Error fetching recording:', err);
+      setErrorId(callId);
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
   const answered = Number(stats?.answered || 0);
   const total = Number(stats?.total || 0);
@@ -243,7 +278,7 @@ export default function Reports() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs font-medium text-slate-500 bg-slate-50 border-b border-slate-100">
-                {['Numara', 'Yön', 'Durum', 'Süre', 'Çalışan', 'Başlangıç'].map(h => (
+                {['Numara', 'Yön', 'Durum', 'Süre', 'Çalışan', 'Başlangıç', 'Kayıt'].map(h => (
                   <th key={h} className="px-5 py-3">{h}</th>
                 ))}
               </tr>
@@ -267,10 +302,50 @@ export default function Reports() {
                   <td className="px-5 py-3 font-mono text-slate-600 text-xs tabular-nums">{formatDuration(c.duration)}</td>
                   <td className="px-5 py-3 text-slate-500 text-sm">{c.agent_name || '—'}</td>
                   <td className="px-5 py-3 text-slate-400 text-xs">{formatDate(c.started_at)}</td>
+                  <td className="px-5 py-3">
+                    {c.status === 'answered' ? (
+                      activePlayerId === c.id ? (
+                        <div className="flex items-center gap-2">
+                          <MiniAudioPlayer src={c.recording_url || recordingUrls[c.id]} callId={c.id} />
+                          <button 
+                            onClick={() => setActivePlayerId(null)}
+                            className="text-xs text-slate-400 hover:text-slate-600 font-medium"
+                          >
+                            Kapat
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handlePlayClick(c.id, c.recording_url)}
+                          disabled={loadingId === c.id}
+                          className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-all disabled:opacity-50"
+                        >
+                          {loadingId === c.id ? (
+                            <>
+                              <Loader2 size={11} className="animate-spin text-slate-500" />
+                              Yükleniyor...
+                            </>
+                          ) : errorId === c.id ? (
+                            <>
+                              <AlertCircle size={11} className="text-red-500" />
+                              Hata
+                            </>
+                          ) : (
+                            <>
+                              <Play size={11} fill="currentColor" />
+                              Dinle
+                            </>
+                          )}
+                        </button>
+                      )
+                    ) : (
+                      <span className="text-slate-400 text-xs">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {history.length === 0 && (
-                <tr><td colSpan={6} className="px-5 py-12 text-center text-slate-400 text-sm">Kayıt yok</td></tr>
+                <tr><td colSpan={7} className="px-5 py-12 text-center text-slate-400 text-sm">Kayıt yok</td></tr>
               )}
             </tbody>
           </table>

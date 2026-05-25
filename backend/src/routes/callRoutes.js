@@ -257,4 +257,41 @@ router.get('/callbacks', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Arama ses kaydını getir ve cache'le
+router.get('/:id/recording', async (req, res) => {
+  try {
+    const { pool } = require('../db/queries');
+    const recordingService = require('../api/recordingService');
+
+    // 1. Çağrıyı getir
+    const r = await pool.query('SELECT * FROM call_logs WHERE id = $1', [req.params.id]);
+    const call = r.rows[0];
+    if (!call) return res.status(404).json({ error: 'Çağrı bulunamadı' });
+
+    // 2. Eğer kayıt URL'si zaten varsa doğrudan döndür
+    if (call.recording_url) {
+      return res.json({ recording_url: call.recording_url });
+    }
+
+    // 3. Çağrı cevaplanmadıysa ses kaydı olmaz
+    if (call.status !== 'answered' && (call.duration || 0) === 0) {
+      return res.status(400).json({ error: 'Cevaplanmamış aramaların ses kaydı bulunmaz' });
+    }
+
+    // 4. Netgsm'den dinamik olarak sorgula
+    const recordingUrl = await recordingService.fetchRecordingUrl(call);
+    if (!recordingUrl) {
+      return res.status(404).json({ error: 'Ses kaydı Netgsm üzerinde henüz bulunamadı veya santralde ses kaydı aktif değil' });
+    }
+
+    // 5. Veritabanına kaydet (cache)
+    await pool.query('UPDATE call_logs SET recording_url = $1 WHERE id = $2', [recordingUrl, call.id]);
+
+    res.json({ recording_url: recordingUrl });
+  } catch (err) {
+    console.error('[callRoutes] Recording error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

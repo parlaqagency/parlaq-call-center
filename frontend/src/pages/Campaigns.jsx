@@ -278,7 +278,7 @@ export default function Campaigns() {
   // Socket bağlantısı — sadece bu sayfada
   useEffect(() => {
     fetchCampaigns();
-    const socket = io('http://localhost:3001');
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001');
     socketRef.current = socket;
 
     socket.on('campaign_stats', (data) => updateStats(data.campaignId, data));

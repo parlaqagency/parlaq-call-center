@@ -34,6 +34,12 @@ app.post('/webhook/netgsm', (req, res) => {
     dialer.onCallEnd(event.unique_id, event.disposition || 'ANSWERED').catch(() => {});
   }
   if (event.scenario === 'cdr' && event.agentextension) {
+    // Ses kaydı varsa kaydet
+    const recordingUrl = event.seskaydi || event.seskayit || event.recording_url;
+    if (recordingUrl && event.unique_id) {
+      calls.update(event.unique_id, { recording_url: recordingUrl }).catch(() => {});
+    }
+
     agents.getAll().then(r => {
       const agent = r.rows.find(a => a.extension === String(event.agentextension));
       if (agent) {
