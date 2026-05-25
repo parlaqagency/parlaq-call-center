@@ -44,6 +44,52 @@ function useRinger(active) {
   }, [active]);
 }
 
+// Çalıyor sesi / Geri arama sesi (Web Audio API)
+function useRingback(active) {
+  useEffect(() => {
+    if (!active) return;
+    let ctx, stopped = false;
+    let timerId = null;
+
+    const playTone = () => {
+      if (stopped) return;
+      try {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.value = 425; // Standart Türk/Avrupa santral çalıyor sesi frekansı
+        osc.type = 'sine';
+
+        const now = ctx.currentTime;
+        gain.gain.setValueAtTime(0, now);
+        // Yumuşak geçişli 1 saniyelik ses dalgası (tık seslerini önlemek için linearRamp)
+        gain.gain.linearRampToValueAtTime(0.08, now + 0.05); // volume
+        gain.gain.setValueAtTime(0.08, now + 0.95);
+        gain.gain.linearRampToValueAtTime(0, now + 1.0);
+
+        osc.start(now);
+        osc.stop(now + 1.0);
+      } catch (err) {
+        console.warn('Ringback Web Audio error:', err);
+      }
+    };
+
+    playTone();
+    timerId = setInterval(playTone, 4000); // 1 saniye ses + 3 saniye sessizlik = 4 saniye periyot
+
+    return () => {
+      stopped = true;
+      if (timerId) clearInterval(timerId);
+      try {
+        ctx?.close();
+      } catch {}
+    };
+  }, [active]);
+}
+
 export default function SoftphoneWidget() {
   const { registered, registering, callStatus, callPhone, muted, session, incomingSession, answer, reject, hangup, toggleMute } = useSipStore();
   const [expanded, setExpanded] = useState(false);
@@ -57,6 +103,7 @@ export default function SoftphoneWidget() {
   useEffect(() => { if (hasIncoming) setExpanded(true); }, [hasIncoming]);
 
   useRinger(hasIncoming);
+  useRingback(callStatus === 'calling');
 
   const statusColor = registered ? 'bg-emerald-500' : registering ? 'bg-amber-400 animate-pulse' : 'bg-slate-300';
   const statusText  = registered ? 'Kayıtlı' : registering ? 'Bağlanıyor...' : 'Bağlı Değil';
