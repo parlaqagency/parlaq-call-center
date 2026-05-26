@@ -203,7 +203,8 @@ export default function Dashboard() {
   const stats = useCallStore(s => s.todayStats);
   const fetchTodayStats = useCallStore(s => s.fetchTodayStats);
   const fetchAgents = useAgentStore(s => s.fetchAgents);
-  const agents = useAgentStore(s => s.agents);
+  const allAgents = useAgentStore(s => s.agents);
+  const agents = allAgents.filter(a => a.role !== 'admin');
   const socketRef = useRef(null);
   const [callMeta, setCallMeta] = useState({});
 
