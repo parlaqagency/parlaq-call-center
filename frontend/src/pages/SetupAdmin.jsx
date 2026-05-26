@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 
 export default function SetupAdmin() {
   const [form, setForm] = useState({ email: '', password: '', confirm: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const navigate = useNavigate();
 
   const handle = async (e) => {
@@ -32,7 +35,7 @@ export default function SetupAdmin() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src="/parlaq-logo.png" alt="Parlaq" className="w-24 h-24 object-contain mb-4" />
+          <img src="/parlaq-logo.png" alt="Parlaq" className="w-36 h-36 object-contain mb-4" />
           <h1 className="text-xl font-bold text-slate-900">İlk Kurulum</h1>
           <p className="text-sm text-slate-500 mt-1">Admin hesabı oluştur</p>
         </div>
@@ -53,25 +56,43 @@ export default function SetupAdmin() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1.5">Şifre</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                placeholder="En az 6 karakter"
-                required
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100 transition-colors placeholder:text-slate-400"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  placeholder="En az 6 karakter"
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 pr-10 text-slate-900 text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100 transition-colors placeholder:text-slate-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1.5">Şifre Tekrar</label>
-              <input
-                type="password"
-                value={form.confirm}
-                onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
-                placeholder="••••••••"
-                required
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100 transition-colors placeholder:text-slate-400"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={form.confirm}
+                  onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 pr-10 text-slate-900 text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100 transition-colors placeholder:text-slate-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             {error && (

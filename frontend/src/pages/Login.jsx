@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, X } from 'lucide-react';
+import { Shield, X, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useSipStore } from '../store/sipStore';
 
@@ -12,6 +12,7 @@ function AdminModal({ onClose }) {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('parlaq_remember_admin');
@@ -77,14 +78,23 @@ function AdminModal({ onClose }) {
           </div>
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1.5">Şifre</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              placeholder="••••••••"
-              required
-              className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100 transition-colors placeholder:text-slate-400"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                placeholder="••••••••"
+                required
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2.5 pr-10 text-slate-900 text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100 transition-colors placeholder:text-slate-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
 
           <AnimatePresence>
@@ -129,6 +139,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const login = useAuthStore(s => s.login);
   const initSip = useSipStore(s => s.init);
   const navigate = useNavigate();
@@ -180,7 +191,7 @@ export default function Login() {
         className="w-full max-w-sm"
       >
         <div className="flex flex-col items-center mb-8">
-          <img src="/parlaq-logo.png" alt="Parlaq" className="w-24 h-24 object-contain mb-4" />
+          <img src="/parlaq-logo.png" alt="Parlaq" className="w-36 h-36 object-contain mb-4" />
           <h1 className="text-xl font-bold text-slate-900">Parlaq Agency</h1>
           <p className="text-sm text-slate-500 mt-1">Call Center Paneli</p>
         </div>
@@ -202,14 +213,23 @@ export default function Login() {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1.5">Şifre</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                placeholder="••••••••"
-                required
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 text-slate-900 text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100 transition-colors placeholder:text-slate-400"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={form.password}
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-white border border-slate-300 rounded-lg px-4 py-3 pr-10 text-slate-900 text-sm focus:outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-100 transition-colors placeholder:text-slate-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             <AnimatePresence>
