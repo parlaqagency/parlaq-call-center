@@ -2,10 +2,20 @@ const router = require('express').Router();
 const netgsm = require('../api/netgsm');
 const { calls, customers, agents } = require('../db/queries');
 
+function isUKNumber(phone) {
+  if (!phone) return false;
+  const clean = String(phone).replace(/[^\d+]/g, '');
+  return clean.startsWith('+44') || clean.startsWith('44') || clean.startsWith('0044');
+}
+
 router.post('/start', async (req, res) => {
   try {
     const { customerPhone, extensionNumber, agentId, customerName } = req.body;
     if (!customerPhone || !extensionNumber) return res.status(400).json({ error: 'customerPhone ve extensionNumber gerekli' });
+
+    if (isUKNumber(customerPhone)) {
+      return res.status(400).json({ error: 'UK numaraları bu sistemde aranamaz' });
+    }
 
     const crmId = `call_${Date.now()}`;
     const result = await netgsm.startOutboundCall({ customerPhone, extensionNumber, crmId });
@@ -200,6 +210,10 @@ router.post('/log', async (req, res) => {
   try {
     const { customerPhone, direction = 'outbound' } = req.body;
     if (!customerPhone) return res.status(400).json({ error: 'customerPhone zorunlu' });
+
+    if (isUKNumber(customerPhone)) {
+      return res.status(400).json({ error: 'UK numaraları bu sisteme kaydedilemez' });
+    }
     const crmId = `sip_${Date.now()}`;
     const [customerRow] = (await customers.upsert({ phone: customerPhone, name: null })).rows;
     const callRow = (await calls.create({

@@ -31,9 +31,7 @@ function formatDuration(seconds) {
 
 function maskPhone(phone) {
   if (!phone) return '—';
-  const p = String(phone).replace(/\s/g, '');
-  if (p.length < 7) return phone;
-  return p.slice(0, 4) + ' *** ' + p.slice(-2);
+  return phone;
 }
 
 function LiveTimer({ startedAt }) {

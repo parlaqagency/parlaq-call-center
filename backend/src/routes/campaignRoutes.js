@@ -1,6 +1,12 @@
 const router = require('express').Router();
 const { pool } = require('../db/queries');
 
+function isUKNumber(phone) {
+  if (!phone) return false;
+  const clean = String(phone).replace(/[^\d+]/g, '');
+  return clean.startsWith('+44') || clean.startsWith('44') || clean.startsWith('0044');
+}
+
 pool.query(`ALTER TABLE campaign_contacts ADD COLUMN IF NOT EXISTS assigned_extension VARCHAR(20)`)
   .then(() => pool.query(`ALTER TABLE campaign_contacts ADD COLUMN IF NOT EXISTS disposition VARCHAR(50)`))
   .then(() => pool.query(`ALTER TABLE campaign_contacts ADD COLUMN IF NOT EXISTS notes TEXT`))
@@ -69,14 +75,20 @@ module.exports = function campaignRoutes(io) {
       const { name, contacts, notes } = req.body;
       if (!name || !contacts?.length) return res.status(400).json({ error: 'İsim ve kişi listesi zorunlu' });
 
+      // Filter out UK numbers
+      const filteredContacts = contacts.filter(c => !isUKNumber(c.phone));
+      if (!filteredContacts.length) {
+        return res.status(400).json({ error: 'Sisteme UK numaraları yüklenemez. Kampanyada geçerli numara kalmadı.' });
+      }
+
       const camp = await pool.query(
         'INSERT INTO call_campaigns (name, notes, created_by, total_contacts) VALUES ($1,$2,$3,$4) RETURNING *',
-        [name, notes || null, req.user.id, contacts.length]
+        [name, notes || null, req.user.id, filteredContacts.length]
       );
       const campaignId = camp.rows[0].id;
 
-      const vals   = contacts.map((_, i) => `($1, $${i * 3 + 2}, $${i * 3 + 3}, $${i * 3 + 4})`).join(',');
-      const params = [campaignId, ...contacts.flatMap(c => [c.phone, c.name || null, c.assigned_extension || null])];
+      const vals   = filteredContacts.map((_, i) => `($1, $${i * 3 + 2}, $${i * 3 + 3}, $${i * 3 + 4})`).join(',');
+      const params = [campaignId, ...filteredContacts.flatMap(c => [c.phone, c.name || null, c.assigned_extension || null])];
       await pool.query(
         `INSERT INTO campaign_contacts (campaign_id, phone, name, assigned_extension) VALUES ${vals}`,
         params

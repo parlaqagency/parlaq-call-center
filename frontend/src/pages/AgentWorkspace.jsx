@@ -281,8 +281,7 @@ const DISP_CFG = {
 };
 
 function maskPhone(p = '') {
-  const c = p.replace(/\D/g, '');
-  return c.length >= 7 ? c.slice(0, 3) + ' *** ** ' + c.slice(-2) : p;
+  return p;
 }
 
 function PersonalLeadQueue({ onCallLead, activeLeadId, refreshKey }) {
