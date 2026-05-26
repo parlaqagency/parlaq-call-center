@@ -14,6 +14,7 @@ import { useCustomerStore } from '../store/customerStore';
 import { useAppointmentStore } from '../store/appointmentStore';
 import { useSipStore } from '../store/sipStore';
 import CallInfoPanel from '../components/CallInfoPanel';
+import ThemeToggle from '../components/ThemeToggle';
 
 const BREAK_REASONS = ['Yemek Molası', 'Tuvalet', 'Toplantı', 'Teknik Sorun', 'Diğer'];
 
@@ -1505,22 +1506,22 @@ export default function AgentWorkspace() {
   const [mobileTab, setMobileTab] = useState('dialer');
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 transition-colors duration-200">
       {/* ── Top Bar ── */}
-      <header className="h-14 bg-white border-b border-slate-200 flex items-center px-3 md:px-5 gap-2 md:gap-4 flex-shrink-0">
+      <header className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800/80 flex items-center px-3 md:px-5 gap-2 md:gap-4 flex-shrink-0 transition-colors duration-200">
         <div className="hidden md:flex flex-col leading-none flex-shrink-0">
-          <span className="text-2xl font-bold text-slate-900 tracking-tight">Parlaq</span>
-          <span className="text-xs font-semibold text-slate-400 tracking-[0.14em] uppercase">Agency Call Center</span>
+          <span className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Parlaq</span>
+          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-[0.14em] uppercase">Agency Call Center</span>
         </div>
 
         {/* Agent info */}
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-slate-900 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
             {agent?.name?.charAt(0) || '?'}
           </div>
           <div>
-            <div className="text-xs font-semibold text-slate-900 leading-none">{agent?.name}</div>
-            <div className="text-xs text-slate-400">Dahili {agent?.extension}</div>
+            <div className="text-xs font-semibold text-slate-900 dark:text-slate-200 leading-none">{agent?.name}</div>
+            <div className="text-xs text-slate-400 dark:text-slate-500">Dahili {agent?.extension}</div>
           </div>
         </div>
 
@@ -1544,22 +1545,22 @@ export default function AgentWorkspace() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -4 }}
                   transition={{ duration: 0.12 }}
-                  className="absolute top-full left-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1 min-w-[170px]"
+                  className="absolute top-full left-0 mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 py-1 min-w-[170px]"
                 >
-                  <div className="px-3 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Mola Sebebi</div>
+                  <div className="px-3 py-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mola Sebebi</div>
                   {BREAK_REASONS.map(r => (
                     <button
                       key={r}
                       onClick={() => { setShowBreakPicker(false); updateStatus('pause', r); }}
-                      className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                     >
                       {r}
                     </button>
                   ))}
-                  <div className="border-t border-slate-100 mt-1 pt-1">
+                  <div className="border-t border-slate-100 dark:border-slate-700 mt-1 pt-1">
                     <button
                       onClick={() => { setShowBreakPicker(false); updateStatus('logoff'); }}
-                      className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                      className="w-full text-left px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors flex items-center gap-2"
                     >
                       <LogOut size={12} /> Görevi Bitir
                     </button>
@@ -1573,7 +1574,7 @@ export default function AgentWorkspace() {
         {/* Randevu butonu */}
         <button
           onClick={() => openAppt(activeCall?.customer_phone || '')}
-          className="hidden sm:flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-medium hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors flex-shrink-0"
+          className="hidden sm:flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-medium hover:bg-emerald-50 dark:hover:bg-emerald-950/20 hover:text-emerald-700 dark:hover:text-emerald-400 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors flex-shrink-0"
         >
           <CalendarPlus size={13} />
           <span className="hidden md:inline">Randevu Al</span>
@@ -1585,28 +1586,30 @@ export default function AgentWorkspace() {
         {/* Right: stats + logout */}
         <div className="ml-auto flex items-center gap-3 md:gap-4 flex-shrink-0">
           <div className="hidden lg:flex items-center gap-3 text-xs">
-            <span className="flex items-center gap-1.5 text-slate-600">
+            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
               <Phone size={12} className="text-slate-400" />
-              <span className="font-bold text-slate-900 tabular-nums">{myStats?.total ?? 0}</span>
-              <span className="text-slate-400">çağrı</span>
+              <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">{myStats?.total ?? 0}</span>
+              <span className="text-slate-400 dark:text-slate-500">çağrı</span>
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle size={12} className="text-emerald-500" />
-              <span className="font-bold text-emerald-700 tabular-nums">{myStats?.answered ?? 0}</span>
-              <span className="text-slate-400">cevap</span>
+              <span className="font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{myStats?.answered ?? 0}</span>
+              <span className="text-slate-400 dark:text-slate-500">cevap</span>
             </span>
             {(myStats?.missed ?? 0) > 0 && (
               <span className="flex items-center gap-1.5">
                 <PhoneMissed size={12} className="text-red-400" />
-                <span className="font-bold text-red-600 tabular-nums">{myStats.missed}</span>
-                <span className="text-slate-400">cevapsız</span>
+                <span className="font-bold text-red-600 dark:text-red-400 tabular-nums">{myStats.missed}</span>
+                <span className="text-slate-400 dark:text-slate-500">cevapsız</span>
               </span>
             )}
           </div>
 
+          <ThemeToggle />
+
           <button
             onClick={() => { logout(); navigate('/login'); }}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50"
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20"
           >
             <LogOut size={13} />
             <span className="hidden sm:inline">Çıkış</span>

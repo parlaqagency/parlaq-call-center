@@ -21,6 +21,7 @@ import ToastContainer from './components/Toast';
 import { useSocket } from './hooks/useSocket';
 import { useAuthStore } from './store/authStore';
 import { useSipStore } from './store/sipStore';
+import { useThemeStore } from './store/themeStore';
 
 const PAGE_TITLES = {
   '/dashboard': 'Dashboard',
@@ -120,6 +121,11 @@ function AppInner() {
   const setIsInitialLoading = useAuthStore(s => s.setIsInitialLoading);
   const initSip             = useSipStore(s => s.init);
   const destroySip          = useSipStore(s => s.destroy);
+
+  // Initialize theme on mount
+  useEffect(() => {
+    useThemeStore.getState().initTheme();
+  }, []);
 
   // Silent auth verification on every mount (page refresh)
   useEffect(() => {

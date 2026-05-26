@@ -28,3 +28,5 @@ backend/uploads/
 # CSV data files (sensitive customer data)
 backend/*.csv
 *.csv
+
+.vercel
