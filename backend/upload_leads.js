@@ -20,7 +20,7 @@ async function main() {
     if (comma === -1) return null;
     const phone = line.slice(0, comma).replace(/\s+/g, '').trim();
     const name  = line.slice(comma + 1).trim() || null;
-    if (!phone) return null;
+    if (!phone || phone.toLowerCase() === 'phone') return null;
     return { phone, name };
   }).filter(Boolean);
 
