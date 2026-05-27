@@ -191,7 +191,7 @@ export default function Login() {
         className="w-full max-w-sm"
       >
         <div className="flex flex-col items-center mb-8">
-          <img src="/parlaq-logo.png" alt="Parlaq" className="w-24 h-24 object-contain mb-4" />
+          <img src="/parlaq-logo.png" alt="Parlaq" className="w-36 h-36 object-contain mb-4" />
           <h1 className="text-xl font-bold text-slate-900">Parlaq Agency</h1>
           <p className="text-sm text-slate-500 mt-1">Call Center Paneli</p>
         </div>
