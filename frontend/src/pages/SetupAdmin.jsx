@@ -35,7 +35,7 @@ export default function SetupAdmin() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <img src="/parlaq-logo.png" alt="Parlaq" className="w-36 h-36 object-contain mb-4" />
+          <img src="/parlaq-logo.png" alt="Parlaq" className="w-54 h-54 object-contain mb-4" />
           <h1 className="text-xl font-bold text-slate-900">İlk Kurulum</h1>
           <p className="text-sm text-slate-500 mt-1">Admin hesabı oluştur</p>
         </div>

@@ -1086,6 +1086,88 @@ function AgentDashboard({ prefillPhone, onPhoneUsed, onCallStart, agentStatus, i
         {error && <p className="text-xs text-red-500">{error}</p>}
       </motion.div>
 
+      {/* Manuel Arama Kartı */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.28, ease: 'easeOut', delay: 0.08 }}
+        whileHover={{ scale: 1.002 }}
+        style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 8px 24px rgba(149,157,165,0.05)' }}
+        className="bg-white border border-slate-200/60 rounded-2xl p-5 transition-shadow duration-300 hover:shadow-[0_4px_20px_rgba(149,157,165,0.1),0_1px_4px_rgba(0,0,0,0.04)]"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <Phone size={14} className="text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">Manuel Arama</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Dilediğiniz numarayı girerek doğrudan arama yapın</p>
+            </div>
+          </div>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border flex items-center justify-center gap-1.5 transition-all w-fit ${
+            registered 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+              : 'bg-rose-50 text-rose-700 border-rose-100'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${registered ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+            {registered ? 'Hat Aktif (SIP)' : 'Hat Pasif (SIP Bağlantısı Yok)'}
+          </span>
+        </div>
+
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={phone}
+              onChange={e => {
+                setPhone(e.target.value);
+                if (error) setError('');
+              }}
+              onKeyDown={e => e.key === 'Enter' && registered && !calling && handleCall()}
+              placeholder="05xx xxx xx xx veya harici numara..."
+              disabled={calling}
+              className="w-full bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-emerald-500 rounded-xl pl-4 pr-10 py-3 text-slate-900 text-sm font-semibold transition-all focus:outline-none focus:ring-4 focus:ring-emerald-500/10 placeholder:text-slate-400 disabled:opacity-50"
+            />
+            {phone && (
+              <button 
+                onClick={() => setPhone('')} 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200/50 transition-all"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={handleCall}
+            disabled={calling || !registered || !phone.trim()}
+            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:bg-slate-100 disabled:text-slate-400 rounded-xl text-white text-sm font-bold shadow-sm shadow-emerald-600/10 hover:shadow-emerald-600/20 active:shadow-none hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 flex-shrink-0"
+          >
+            {calling ? (
+              <>
+                <span className="w-4 h-4 border-2 border-slate-400 border-t-slate-800 rounded-full animate-spin" />
+                Aranıyor...
+              </>
+            ) : (
+              <>
+                <Phone size={15} strokeWidth={2.5} />
+                Arama Başlat
+              </>
+            )}
+          </button>
+        </div>
+        {error && (
+          <motion.p 
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-2.5 text-xs text-rose-600 font-medium flex items-center gap-1.5"
+          >
+            <span className="w-1 h-1 rounded-full bg-rose-500" />
+            {error}
+          </motion.p>
+        )}
+      </motion.div>
+
       {/* KPI Cards */}
       <motion.div
         initial="hidden"

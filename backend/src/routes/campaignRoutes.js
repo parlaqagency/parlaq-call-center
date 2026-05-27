@@ -87,8 +87,18 @@ module.exports = function campaignRoutes(io) {
       );
       const campaignId = camp.rows[0].id;
 
+      // Get system agent extensions dynamically for round-robin assignment
+      const agentsResult = await pool.query("SELECT extension FROM agents WHERE role = 'agent' ORDER BY id ASC");
+      const extensions = agentsResult.rows.length > 0 
+        ? agentsResult.rows.map(a => a.extension) 
+        : ['101', '102', '103', '104', '105'];
+
       const vals   = filteredContacts.map((_, i) => `($1, $${i * 3 + 2}, $${i * 3 + 3}, $${i * 3 + 4})`).join(',');
-      const params = [campaignId, ...filteredContacts.flatMap(c => [c.phone, c.name || null, c.assigned_extension || null])];
+      const params = [campaignId, ...filteredContacts.flatMap((c, i) => [
+        c.phone, 
+        c.name || null, 
+        c.assigned_extension || extensions[i % extensions.length]
+      ])];
       await pool.query(
         `INSERT INTO campaign_contacts (campaign_id, phone, name, assigned_extension) VALUES ${vals}`,
         params

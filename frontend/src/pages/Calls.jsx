@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Search, Phone } from 'lucide-react';
+import { Search, Phone, ArrowRightLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAgentStore } from '../store/agentStore';
 import { useCallStore } from '../store/callStore';
 import { useCustomerStore } from '../store/customerStore';
+import { useAuthStore } from '../store/authStore';
+import { useSipStore } from '../store/sipStore';
 import CallDialer from '../components/Calls/CallDialer';
 import CallHistory from '../components/Calls/CallHistory';
+import axios from 'axios';
 
 function CustomerQuickList({ onCall }) {
   const { customers, fetchCustomers } = useCustomerStore();
@@ -61,6 +65,7 @@ function CustomerQuickList({ onCall }) {
 
 export default function Calls() {
   const agents = useAgentStore(s => s.agents);
+  const isAdmin = useAuthStore(s => s.isAdmin);
   const availableAgent = agents.find(a => a.status === 'available');
   const [dialPhone, setDialPhone] = useState('');
 
@@ -69,6 +74,7 @@ export default function Calls() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
           <CallDialer
+            isAdmin={isAdmin}
             agentId={availableAgent?.id}
             agentExtension={availableAgent?.extension || '101'}
             prefillPhone={dialPhone}

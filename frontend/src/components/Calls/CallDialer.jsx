@@ -79,7 +79,7 @@ function ActiveCallControls() {
   );
 }
 
-export default function CallDialer({ agentId, agentExtension, prefillPhone, onPhoneUsed }) {
+export default function CallDialer({ isAdmin, agentId, agentExtension, prefillPhone, onPhoneUsed }) {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -95,7 +95,13 @@ export default function CallDialer({ agentId, agentExtension, prefillPhone, onPh
     if (!phone.trim()) return;
     setError(''); setLoading(true);
     try {
-      if (registered) {
+      if (isAdmin) {
+        // Admin her zaman HTTP API kullan
+        await axios.post('/api/calls/start', {
+          customerPhone: phone.trim(),
+          isAdmin: true,
+        });
+      } else if (registered) {
         // JsSIP üzerinden ara + CDR kaydı
         const { data: logEntry } = await axios.post('/api/calls/log', {
           customerPhone: phone.trim(),
