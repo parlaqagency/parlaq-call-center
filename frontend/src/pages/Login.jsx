@@ -190,10 +190,8 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm"
       >
-        <div className="flex flex-col items-center mb-8">
-          <img src="/parlaq-logo.png" alt="Parlaq" className="w-44 h-44 object-contain mb-4" />
-          <h1 className="text-xl font-bold text-slate-900">Parlaq Agency</h1>
-          <p className="text-sm text-slate-500 mt-1">Call Center Paneli</p>
+        <div className="flex flex-col items-center mb-2">
+          <img src="/parlaq-logo.png" alt="Parlaq" className="w-44 h-44 object-contain" />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
