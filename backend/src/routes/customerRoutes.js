@@ -87,4 +87,49 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Kara Liste toggle endpoint (By ID)
+router.patch('/:id/blacklist', async (req, res) => {
+  try {
+    const { is_blacklisted } = req.body;
+    const { pool } = require('../db/queries');
+    const result = await pool.query(
+      'UPDATE customers SET is_blacklisted = $1 WHERE id = $2 RETURNING *',
+      [is_blacklisted, req.params.id]
+    );
+    if (!result.rows[0]) return res.status(404).json({ error: 'Müşteri bulunamadı' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Kara Liste toggle endpoint (By Phone - for unregistered numbers)
+router.post('/blacklist', async (req, res) => {
+  try {
+    const { phone, is_blacklisted } = req.body;
+    if (!phone) return res.status(400).json({ error: 'Telefon numarası zorunlu' });
+    
+    const { pool } = require('../db/queries');
+    
+    // Check if customer exists first
+    const exist = await pool.query('SELECT * FROM customers WHERE phone = $1', [phone]);
+    if (exist.rows[0]) {
+      const result = await pool.query(
+        'UPDATE customers SET is_blacklisted = $1 WHERE id = $2 RETURNING *',
+        [is_blacklisted, exist.rows[0].id]
+      );
+      return res.json(result.rows[0]);
+    } else {
+      // Create new customer stub if blacklisting and they don't exist
+      const result = await pool.query(
+        "INSERT INTO customers (name, surname, phone, company, notes, is_blacklisted) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+        ['Bilinmeyen Müşteri', 'Kara Liste', phone, '—', 'Kara Listeye eklenen numara', is_blacklisted]
+      );
+      return res.status(201).json(result.rows[0]);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -35,6 +35,21 @@ export const useCustomerStore = create((set, get) => ({
     set(s => ({ customers: s.customers.filter(c => c.id !== id), total: s.total - 1 }));
   },
 
+  toggleBlacklist: async (id, phone, isBlacklisted) => {
+    if (id) {
+      const { data } = await axios.patch(`/api/customers/${id}/blacklist`, { is_blacklisted: isBlacklisted });
+      set(s => ({
+        customers: s.customers.map(c => c.id === id ? data : c),
+        selectedCustomer: s.selectedCustomer?.id === id ? data : s.selectedCustomer
+      }));
+      return data;
+    } else if (phone) {
+      const { data } = await axios.post('/api/customers/blacklist', { phone, is_blacklisted: isBlacklisted });
+      await get().fetchCustomers();
+      return data;
+    }
+  },
+
   bulkImport: async (rows) => {
     const { data } = await axios.post('/api/customers/bulk', { rows });
     await get().fetchCustomers({ page: 1 });

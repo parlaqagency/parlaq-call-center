@@ -4,11 +4,12 @@ import {
   Phone, PhoneOff, Mic, MicOff, ArrowRightLeft,
   CheckCircle, XCircle, Calendar, RotateCcw, VolumeX,
   PhoneOff as BusyIcon, HelpCircle, Clock, User, Building2,
-  PhoneIncoming, PhoneOutgoing, Save, X, AlertCircle
+  PhoneIncoming, PhoneOutgoing, Save, X, AlertCircle, ShieldAlert
 } from 'lucide-react';
 import axios from 'axios';
 import { useSipStore } from '../store/sipStore';
 import { useAppointmentStore } from '../store/appointmentStore';
+import { useCustomerStore } from '../store/customerStore';
 
 // ── Disposition tanımları ────────────────────────────────────────
 const DISPOSITIONS = [
@@ -99,6 +100,18 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
   const [apptDate, setApptDate]     = useState('');
   const [apptTitle, setApptTitle]   = useState('');
   const [apptNotes, setApptNotes]   = useState('');
+
+  const toggleBlacklist = useCustomerStore(s => s.toggleBlacklist);
+
+  const handleBlacklistToggle = async () => {
+    try {
+      const currentStatus = !!customer?.is_blacklisted;
+      const updatedCustomer = await toggleBlacklist(customer?.id, callPhone, !currentStatus);
+      setCustomer(updatedCustomer);
+    } catch (err) {
+      console.error('Blacklist toggle error:', err);
+    }
+  };
 
   const isActive = callStatus === 'active';
   const isCalling = callStatus === 'calling';
@@ -268,36 +281,65 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
 
       <div className="flex-1 overflow-y-auto">
         {/* ── Müşteri Bilgileri ── */}
-        <div className="px-5 py-4 border-b border-slate-100">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
-              {(customer?.name || callPhone).charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              {customer ? (
-                <>
-                  <div className="text-base font-bold text-slate-900 truncate">
-                    {customer.name} {customer.surname}
-                  </div>
-                  {customer.company && (
-                    <div className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
-                      <Building2 size={11} /> {customer.company}
+        <div className={`px-5 py-4 border-b transition-all duration-300 ${
+          customer?.is_blacklisted
+            ? 'bg-slate-900 text-slate-100 border-slate-950 dark:bg-slate-950 dark:text-slate-200 dark:border-black'
+            : 'bg-white text-slate-900 border-slate-100 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-800'
+        }`}>
+          <div className="flex items-start justify-between gap-3 w-full">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0 transition-colors ${
+                customer?.is_blacklisted ? 'bg-rose-600 text-white' : 'bg-slate-900 text-white dark:bg-slate-800'
+              }`}>
+                {(customer?.name || callPhone).charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                {customer ? (
+                  <>
+                    <div className={`text-base font-bold truncate flex items-center gap-1.5 ${customer?.is_blacklisted ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+                      {customer.name} {customer.surname}
+                      {customer?.is_blacklisted && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 uppercase tracking-wide animate-pulse">
+                          Kara Liste
+                        </span>
+                      )}
                     </div>
-                  )}
-                  {customer.email && (
-                    <div className="text-xs text-slate-400 mt-0.5">{customer.email}</div>
-                  )}
-                  {customer.notes && (
-                    <div className="text-xs text-slate-500 mt-1 italic bg-slate-50 rounded-lg px-2 py-1">
-                      {customer.notes}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-sm text-slate-500">Müşteri kaydı bulunamadı</div>
-              )}
-              <div className="font-mono text-sm font-semibold text-slate-800 mt-1">{callPhone}</div>
+                    {customer.company && (
+                      <div className={`flex items-center gap-1 text-xs mt-0.5 ${customer?.is_blacklisted ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                        <Building2 size={11} /> {customer.company}
+                      </div>
+                    )}
+                    {customer.email && (
+                      <div className={`text-xs mt-0.5 ${customer?.is_blacklisted ? 'text-slate-400' : 'text-slate-400 dark:text-slate-500'}`}>{customer.email}</div>
+                    )}
+                    {customer.notes && (
+                      <div className={`text-xs mt-1 italic rounded-lg px-2 py-1 ${
+                        customer?.is_blacklisted ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400'
+                      }`}>
+                        {customer.notes}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className={`text-sm ${customer?.is_blacklisted ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>Müşteri kaydı bulunamadı</div>
+                )}
+                <div className={`font-mono text-sm font-semibold mt-1 ${customer?.is_blacklisted ? 'text-rose-400' : 'text-slate-800 dark:text-slate-300'}`}>{callPhone}</div>
+              </div>
             </div>
+
+            {/* Blacklist toggle button */}
+            <button
+              type="button"
+              onClick={handleBlacklistToggle}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-205 flex-shrink-0 ${
+                customer?.is_blacklisted
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white border-rose-700 shadow-lg shadow-rose-500/20 ring-2 ring-rose-500/20'
+                  : 'bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border-slate-200 hover:border-rose-200 dark:bg-slate-800 dark:hover:bg-rose-950/20 dark:text-slate-355 dark:border-slate-700'
+              }`}
+            >
+              <ShieldAlert size={13} className={customer?.is_blacklisted ? 'animate-bounce' : ''} />
+              <span>{customer?.is_blacklisted ? 'Kara Listede' : 'Kara Liste'}</span>
+            </button>
           </div>
         </div>
 

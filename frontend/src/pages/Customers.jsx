@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Upload, Phone, Pencil, Trash2, X, Users, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
+import { Search, Plus, Upload, Phone, Pencil, Trash2, X, Users, PhoneIncoming, PhoneOutgoing, ShieldAlert } from 'lucide-react';
 import { useCustomerStore } from '../store/customerStore';
 import { useCallStore } from '../store/callStore';
 import { useAgentStore } from '../store/agentStore';
@@ -273,7 +273,7 @@ function CustomerCard({ customer, calls, onClose, onCall }) {
 }
 
 export default function Customers() {
-  const { customers, total, search, loading, fetchCustomers, deleteCustomer, selectCustomer, selectedCustomer, customerCalls, clearSelected } = useCustomerStore();
+  const { customers, total, search, loading, fetchCustomers, deleteCustomer, selectCustomer, selectedCustomer, customerCalls, clearSelected, toggleBlacklist } = useCustomerStore();
   const startCall = useCallStore(s => s.startCall);
   const agents = useAgentStore(s => s.agents);
   const [showCreate, setShowCreate] = useState(false);
@@ -341,35 +341,57 @@ export default function Customers() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="hover:bg-slate-50 transition-colors group"
+                  className={`transition-colors group border-b border-slate-100 dark:border-slate-800 ${
+                    c.is_blacklisted
+                      ? 'bg-slate-900 text-slate-200 hover:bg-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-900/90'
+                      : 'hover:bg-slate-50 text-slate-700 bg-white dark:bg-slate-900 dark:hover:bg-slate-850'
+                  }`}
                 >
                   <td className="px-5 py-3.5">
-                    <button onClick={() => selectCustomer(c)} className="text-left hover:text-blue-600 transition-colors">
-                      <div className="text-sm font-medium text-slate-900">{c.name} {c.surname}</div>
+                    <button onClick={() => selectCustomer(c)} className="text-left hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                      <div className={`text-sm font-semibold flex items-center gap-1.5 ${c.is_blacklisted ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+                        {c.name} {c.surname}
+                        {c.is_blacklisted && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 uppercase tracking-wide animate-pulse">
+                            Kara Liste
+                          </span>
+                        )}
+                      </div>
                     </button>
                   </td>
-                  <td className="px-5 py-3.5 font-mono text-slate-600 text-sm">{c.phone}</td>
-                  <td className="px-5 py-3.5 text-slate-500 text-sm">{c.company || '—'}</td>
-                  <td className="px-5 py-3.5 text-slate-500 text-sm">{c.email || '—'}</td>
-                  <td className="px-5 py-3.5 text-slate-400 text-sm max-w-xs truncate">{c.notes || '—'}</td>
+                  <td className={`px-5 py-3.5 font-mono text-sm ${c.is_blacklisted ? 'text-rose-300' : 'text-slate-600 dark:text-slate-400'}`}>{c.phone}</td>
+                  <td className={`px-5 py-3.5 text-sm ${c.is_blacklisted ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>{c.company || '—'}</td>
+                  <td className={`px-5 py-3.5 text-sm ${c.is_blacklisted ? 'text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>{c.email || '—'}</td>
+                  <td className={`px-5 py-3.5 text-sm max-w-xs truncate ${c.is_blacklisted ? 'text-slate-400' : 'text-slate-400 dark:text-slate-500'}`}>{c.notes || '—'}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleCall(c.phone)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 border border-slate-900 text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-900 border border-slate-900 text-white rounded-lg text-xs font-medium hover:bg-slate-800 dark:bg-slate-800 dark:border-slate-800 dark:hover:bg-slate-700 transition-colors"
                       >
                         <Phone size={11} />
                         Ara
                       </button>
                       <button
+                        onClick={() => toggleBlacklist(c.id, c.phone, !c.is_blacklisted)}
+                        title={c.is_blacklisted ? 'Kara Listeden Çıkar' : 'Kara Listeye Ekle'}
+                        className={`p-1.5 border rounded-lg transition-colors ${
+                          c.is_blacklisted
+                            ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20'
+                            : 'bg-white border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-rose-950/20'
+                        }`}
+                      >
+                        <ShieldAlert size={13} />
+                      </button>
+                      <button
                         onClick={() => setEditing(c)}
-                        className="p-1.5 bg-white border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-700 transition-colors"
+                        className="p-1.5 bg-white border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
                       >
                         <Pencil size={13} />
                       </button>
                       <button
                         onClick={() => deleteCustomer(c.id)}
-                        className="p-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+                        className="p-1.5 bg-white border border-slate-200 text-slate-400 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-red-950/30 dark:hover:border-red-900 transition-colors"
                       >
                         <Trash2 size={13} />
                       </button>

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Phone, PhoneOff, Mic, MicOff, PhoneIncoming, PhoneOutgoing,
   LogOut, CheckCircle, PhoneMissed, ArrowRightLeft, Save, CalendarPlus, Calendar,
-  Users, Clock, PauseCircle, X, TrendingUp, Zap,
+  Users, Clock, PauseCircle, X, TrendingUp, Zap, ShieldAlert
 } from 'lucide-react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
@@ -349,17 +349,28 @@ function PersonalLeadQueue({ onCallLead, activeLeadId, refreshKey }) {
                 animate={{ opacity: isDone ? 0.5 : 1, x: 0 }}
                 transition={{ delay: Math.min(i * 0.02, 0.3) }}
                 className={`flex items-center gap-2.5 px-4 py-2.5 transition-colors ${
-                  isActive ? 'bg-emerald-50 border-l-2 border-l-emerald-400' : 'hover:bg-slate-50'
+                  isActive 
+                    ? 'bg-emerald-50 border-l-2 border-l-emerald-400 dark:bg-emerald-950/20 dark:border-l-emerald-500' 
+                    : lead.is_blacklisted
+                      ? 'bg-slate-900 text-slate-100 hover:bg-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900 border-l-2 border-l-rose-500'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200'
                 }`}
               >
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                  isActive ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'
+                  isActive 
+                    ? 'bg-emerald-600 text-white' 
+                    : lead.is_blacklisted 
+                      ? 'bg-rose-600 text-white' 
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                 }`}>
                   {(lead.name || lead.phone || '?').charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-slate-800 truncate">{lead.name || '—'}</div>
-                  <div className="text-xs font-mono text-slate-400">{maskPhone(lead.phone)}</div>
+                  <div className={`text-xs font-semibold truncate flex items-center gap-1.5 ${lead.is_blacklisted ? 'text-white' : 'text-slate-850 dark:text-slate-200'}`}>
+                    {lead.name || '—'}
+                    {lead.is_blacklisted && <ShieldAlert size={10} className="text-rose-400 animate-pulse flex-shrink-0" />}
+                  </div>
+                  <div className={`text-xs font-mono ${lead.is_blacklisted ? 'text-rose-300' : 'text-slate-400 dark:text-slate-500'}`}>{maskPhone(lead.phone)}</div>
                 </div>
                 {d ? (
                   <span className={`text-xs px-1.5 py-0.5 rounded-full border font-medium flex-shrink-0 ${d.cls}`}>
@@ -841,11 +852,18 @@ function CallbackQueue({ onCall }) {
           const urgency = getUrgency(cb.callback_at);
           const sty = URGENCY_STYLE[urgency];
           return (
-            <div key={cb.id} className={`px-4 py-2.5 flex items-center gap-2 hover:bg-slate-50 transition-colors ${sty.row}`}>
+            <div key={cb.id} className={`px-4 py-2.5 flex items-center gap-2 transition-colors ${
+              cb.is_blacklisted 
+                ? 'bg-slate-900 text-slate-100 hover:bg-slate-800 border-l-2 border-l-rose-500' 
+                : `${sty.row} hover:bg-slate-50`
+            }`}>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-mono font-medium text-slate-900 truncate">{cb.customer_phone}</div>
+                <div className={`text-xs font-mono font-medium truncate flex items-center gap-1 ${cb.is_blacklisted ? 'text-rose-350' : 'text-slate-900 dark:text-slate-205'}`}>
+                  {cb.customer_phone}
+                  {cb.is_blacklisted && <ShieldAlert size={10} className="text-rose-450 animate-pulse flex-shrink-0" />}
+                </div>
                 {(cb.customer_name || cb.customer_surname) && (
-                  <div className="text-xs text-slate-400 truncate">{[cb.customer_name, cb.customer_surname].filter(Boolean).join(' ')}</div>
+                  <div className={`text-xs truncate ${cb.is_blacklisted ? 'text-white font-semibold' : 'text-slate-400'}`}>{[cb.customer_name, cb.customer_surname].filter(Boolean).join(' ')}</div>
                 )}
                 <div className={`text-xs tabular-nums mt-0.5 ${sty.time}`}>
                   {urgency === 'overdue' ? 'GECİKTİ · ' : ''}{fmtCallbackTime(cb.callback_at)}
@@ -1266,11 +1284,18 @@ function AgentDashboard({ prefillPhone, onPhoneUsed, onCallStart, agentStatus, i
                   initial={{ opacity: 0, x: -6 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="px-4 py-2.5 flex items-center gap-2.5"
+                  className={`px-4 py-2.5 flex items-center gap-2.5 transition-colors ${
+                    c.is_blacklisted
+                      ? 'bg-slate-900 text-slate-100 hover:bg-slate-800 border-l-2 border-l-rose-500'
+                      : 'dark:hover:bg-slate-800/30'
+                  }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-mono font-medium text-slate-800 truncate">{c.customer_phone}</div>
-                    <div className="text-xs text-slate-300 tabular-nums">
+                    <div className={`text-xs font-mono font-medium truncate flex items-center gap-1 ${c.is_blacklisted ? 'text-rose-350' : 'text-slate-800 dark:text-slate-200'}`}>
+                      {c.customer_phone}
+                      {c.is_blacklisted && <ShieldAlert size={10} className="text-rose-450 animate-pulse flex-shrink-0" />}
+                    </div>
+                    <div className={`text-xs tabular-nums mt-0.5 ${c.is_blacklisted ? 'text-slate-400' : 'text-slate-300 dark:text-slate-500'}`}>
                       {new Date(c.created_at || c.started_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                       {c.duration > 0 && ` · ${Math.floor(c.duration / 60)}:${String(c.duration % 60).padStart(2, '0')}`}
                     </div>

@@ -48,7 +48,13 @@ const calls = {
     if (onlyRecordings) { where += ` AND cl.status = 'answered'`; }
     params.push(limit, offset);
     return pool.query(
-      `SELECT cl.*, a.name as agent_name FROM call_logs cl LEFT JOIN agents a ON cl.agent_id = a.id ${where} ORDER BY cl.created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      `SELECT cl.*, a.name as agent_name, c.is_blacklisted 
+       FROM call_logs cl 
+       LEFT JOIN agents a ON cl.agent_id = a.id 
+       LEFT JOIN customers c ON cl.customer_phone = c.phone
+       ${where} 
+       ORDER BY cl.created_at DESC 
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );
   },

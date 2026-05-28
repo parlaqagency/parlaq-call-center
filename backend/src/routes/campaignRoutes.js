@@ -39,10 +39,12 @@ module.exports = function campaignRoutes(io) {
       const { extension } = req.user;
       const [leads, stats] = await Promise.all([
         pool.query(
-          `SELECT id, campaign_id, phone, name, status, disposition, notes, created_at
-           FROM campaign_contacts
-           WHERE assigned_extension = $1
-           ORDER BY id ASC`,
+          `SELECT cc.id, cc.campaign_id, cc.phone, cc.name, cc.status, cc.disposition, cc.notes, cc.created_at,
+                  c.is_blacklisted AS is_blacklisted
+           FROM campaign_contacts cc
+           LEFT JOIN customers c ON cc.phone = c.phone
+           WHERE cc.assigned_extension = $1
+           ORDER BY cc.id ASC`,
           [extension]
         ),
         pool.query(

@@ -247,9 +247,10 @@ router.get('/my-history', async (req, res) => {
   try {
     const { pool } = require('../db/queries');
     const result = await pool.query(
-      `SELECT cl.*, a.name as agent_name
+      `SELECT cl.*, a.name as agent_name, c.is_blacklisted
        FROM call_logs cl
        LEFT JOIN agents a ON cl.agent_id = a.id
+       LEFT JOIN customers c ON cl.customer_phone = c.phone
        WHERE cl.agent_id = $1 AND DATE(cl.created_at) = CURRENT_DATE
        ORDER BY cl.created_at DESC LIMIT 50`,
       [req.user.id]
@@ -265,7 +266,7 @@ router.get('/callbacks', async (req, res) => {
   try {
     const { pool } = require('../db/queries');
     const r = await pool.query(
-      `SELECT cl.*, c.name AS customer_name, c.surname AS customer_surname
+      `SELECT cl.*, c.name AS customer_name, c.surname AS customer_surname, c.is_blacklisted
        FROM call_logs cl
        LEFT JOIN customers c ON cl.customer_id = c.id
        WHERE cl.disposition = 'callback' AND cl.callback_at IS NOT NULL
