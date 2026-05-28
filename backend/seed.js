@@ -10,7 +10,7 @@ const pool = new Pool({
 const AGENTS = [
   { name: 'Çalışan 101', extension: '101', sip_password: 'SgF5Yr3Get' },
   { name: 'Çalışan 102', extension: '102', sip_password: 'Y66f99mvhm' },
-  { name: 'Çalışan 103', extension: '103', sip_password: '5CfHT66rVh' },
+  { name: 'Duygu Aygüneş', extension: '103', sip_password: 'Duygu123Duygu' },
   { name: 'Özlem Bağ Demir', extension: '104', sip_password: 'Ozlem123Ozlem' },
   { name: 'Çalışan 105', extension: '105', sip_password: 'uFd7C3uMNk' },
 ];
