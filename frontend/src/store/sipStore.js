@@ -114,11 +114,32 @@ export const useSipStore = create((set, get) => ({
 
     set({ session, callStatus: 'calling', callPhone: phone, muted: false, callLogId: logId });
 
+    let callStart = null;
+
+    const completeLog = (status, dur = 0) => {
+      if (!logId) return;
+      axios.patch(`/api/calls/${logId}/complete`, { duration: dur, status }).catch(() => {});
+    };
+
     session.on('progress',   () => set({ callStatus: 'calling' }));
-    session.on('accepted',   () => set({ callStatus: 'active' }));
-    session.on('confirmed',  () => set({ callStatus: 'active' }));
-    session.on('ended',      () => set({ session: null, callStatus: null, callPhone: '', muted: false, callLogId: null }));
-    session.on('failed',     (e) => { console.warn('SIP çağrı başarısız:', e.cause); set({ session: null, callStatus: null, callPhone: '', muted: false, callLogId: null }); });
+    session.on('accepted',   () => {
+      callStart = Date.now();
+      set({ callStatus: 'active' });
+    });
+    session.on('confirmed',  () => {
+      if (!callStart) callStart = Date.now();
+      set({ callStatus: 'active' });
+    });
+    session.on('ended',      () => {
+      const duration = callStart ? Math.max(0, Math.round((Date.now() - callStart) / 1000)) : 0;
+      completeLog('answered', duration);
+      set({ session: null, callStatus: null, callPhone: '', muted: false, callLogId: null });
+    });
+    session.on('failed',     (e) => {
+      console.warn('SIP çağrı başarısız:', e.cause);
+      completeLog('missed', 0);
+      set({ session: null, callStatus: null, callPhone: '', muted: false, callLogId: null });
+    });
 
     attachRemoteStream(session);
     return session;
