@@ -60,23 +60,11 @@ function AgentWallCard({ agent, callMeta }) {
   const isAvailable = agent.status === 'available';
   const meta = callMeta[agent.id];
 
-  const cardStyle = isBusy
-    ? {
-        boxShadow: '0 0 18px rgba(34,197,94,0.12), 0 1px 4px rgba(0,0,0,0.05)',
-        border: '1px solid rgba(16,185,129,0.35)',
-        background: '#fff',
-      }
+  const cardClasses = isBusy
+    ? 'border border-emerald-500/35 dark:border-emerald-500/30 bg-white dark:bg-slate-800/80 shadow-md shadow-emerald-500/5 dark:shadow-emerald-500/2'
     : isBreak
-    ? {
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        border: '1px solid rgba(251,191,36,0.35)',
-        background: '#fffbeb',
-      }
-    : {
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-        border: '1px solid #f1f5f9',
-        background: '#fff',
-      };
+    ? 'border border-amber-400/35 dark:border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10 shadow-sm'
+    : 'border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800/80 shadow-sm';
 
   return (
     <motion.div
@@ -85,8 +73,7 @@ function AgentWallCard({ agent, callMeta }) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.22, ease: 'easeOut' }}
-      style={cardStyle}
-      className="rounded-xl p-4 relative overflow-hidden"
+      className={`rounded-xl p-4 relative overflow-hidden transition-all duration-200 ${cardClasses}`}
     >
       {isBusy && (
         <motion.div
@@ -99,8 +86,8 @@ function AgentWallCard({ agent, callMeta }) {
 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-800 truncate">{agent.name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">Dahili {agent.extension}</p>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{agent.name}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Dahili {agent.extension}</p>
         </div>
         <div className="flex-shrink-0 flex items-center gap-1.5 mt-0.5">
           {isBusy && (
@@ -112,14 +99,14 @@ function AgentWallCard({ agent, callMeta }) {
           )}
           {isBreak && <span className="w-2 h-2 rounded-full bg-amber-400" />}
           {isAvailable && <span className="w-2 h-2 rounded-full bg-emerald-400" />}
-          {!isBusy && !isBreak && !isAvailable && <span className="w-2 h-2 rounded-full bg-slate-300" />}
+          {!isBusy && !isBreak && !isAvailable && <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />}
         </div>
       </div>
 
       <div className="mt-3">
         {isBusy && meta ? (
           <div className="space-y-1">
-            <p className="text-xs text-slate-500 font-medium">{maskPhone(meta.phone)}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-300 font-medium">{maskPhone(meta.phone)}</p>
             <div className="flex items-center gap-1.5">
               <Phone size={10} className="text-emerald-500 flex-shrink-0" />
               <LiveTimer startedAt={meta.startedAt} />
@@ -128,16 +115,16 @@ function AgentWallCard({ agent, callMeta }) {
         ) : isBusy ? (
           <div className="flex items-center gap-1.5">
             <Phone size={10} className="text-emerald-500 flex-shrink-0" />
-            <span className="text-xs text-emerald-600 font-semibold">Görüşmede</span>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Görüşmede</span>
           </div>
         ) : isBreak ? (
-          <p className="text-xs text-amber-600 font-medium truncate">
+          <p className="text-xs text-amber-600 dark:text-amber-400 font-medium truncate">
             Molada {agent.break_reason ? `(${agent.break_reason})` : ''}
           </p>
         ) : isAvailable ? (
-          <p className="text-xs text-emerald-500 font-medium">Çağrı Bekliyor</p>
+          <p className="text-xs text-emerald-500 dark:text-emerald-400 font-medium">Çağrı Bekliyor</p>
         ) : (
-          <p className="text-xs text-slate-400">Çevrimdışı</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Çevrimdışı</p>
         )}
       </div>
     </motion.div>

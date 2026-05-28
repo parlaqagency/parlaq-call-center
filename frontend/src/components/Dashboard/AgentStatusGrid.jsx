@@ -2,10 +2,26 @@ import { motion } from 'framer-motion';
 import { useAgentStore } from '../../store/agentStore';
 
 const STATUS = {
-  available: { label: 'Müsait', dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  busy: { label: 'Meşgul', dot: 'bg-red-500', badge: 'bg-red-50 text-red-700 border-red-200' },
-  break: { label: 'Molada', dot: 'bg-violet-500', badge: 'bg-violet-50 text-violet-700 border-violet-200' },
-  offline: { label: 'Çevrimdışı', dot: 'bg-slate-300', badge: 'bg-slate-100 text-slate-500 border-slate-200' },
+  available: { 
+    label: 'Müsait', 
+    dot: 'bg-emerald-500', 
+    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50' 
+  },
+  busy: { 
+    label: 'Meşgul', 
+    dot: 'bg-red-500', 
+    badge: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/50' 
+  },
+  break: { 
+    label: 'Molada', 
+    dot: 'bg-violet-500', 
+    badge: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-900/50' 
+  },
+  offline: { 
+    label: 'Çevrimdışı', 
+    dot: 'bg-slate-300 dark:bg-slate-600', 
+    badge: 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800' 
+  },
 };
 
 function AgentCard({ agent }) {
@@ -15,15 +31,15 @@ function AgentCard({ agent }) {
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-slate-200 rounded-xl p-3.5 hover:shadow-sm transition-shadow"
+      className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-xl p-3.5 hover:shadow-sm dark:hover:shadow-black/20 transition-all"
     >
       <div className="flex items-center gap-2.5 mb-2.5">
-        <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-slate-900 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
           {agent.name.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-slate-900 truncate">{agent.name}</div>
-          <div className="text-xs text-slate-400">Dahili {agent.extension}</div>
+          <div className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{agent.name}</div>
+          <div className="text-xs text-slate-400 dark:text-slate-500">Dahili {agent.extension}</div>
         </div>
       </div>
       <div className="flex items-center gap-1.5">
@@ -45,7 +61,7 @@ export default function AgentStatusGrid() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {agents.map(a => <AgentCard key={a.id} agent={a} />)}
         {agents.length === 0 && (
-          <div className="col-span-full text-slate-400 text-sm text-center py-10 border border-dashed border-slate-200 rounded-xl">
+          <div className="col-span-full text-slate-400 dark:text-slate-500 text-sm text-center py-10 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
             Henüz çalışan eklenmemiş
           </div>
         )}
