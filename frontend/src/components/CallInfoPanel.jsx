@@ -4,10 +4,11 @@ import {
   Phone, PhoneOff, Mic, MicOff, ArrowRightLeft,
   CheckCircle, XCircle, Calendar, RotateCcw, VolumeX,
   PhoneOff as BusyIcon, HelpCircle, Clock, User, Building2,
-  PhoneIncoming, PhoneOutgoing, Save, X,
+  PhoneIncoming, PhoneOutgoing, Save, X, AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { useSipStore } from '../store/sipStore';
+import { useAppointmentStore } from '../store/appointmentStore';
 
 // ── Disposition tanımları ────────────────────────────────────────
 const DISPOSITIONS = [
@@ -81,6 +82,7 @@ function HistoryRow({ call }) {
 // ── Ana Panel ────────────────────────────────────────────────────
 export default function CallInfoPanel({ callLogId, onHangup, compact = false }) {
   const { callPhone, callStatus, muted, session, toggleMute, hangup } = useSipStore();
+  const { createAppointment, fetchAppointments } = useAppointmentStore();
 
   const [customer, setCustomer]     = useState(null);
   const [history, setHistory]       = useState([]);
@@ -91,26 +93,73 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
   const [showTransfer, setShowTransfer] = useState(false);
   const [saved, setSaved]           = useState(false);
   const [saving, setSaving]         = useState(false);
+  const [errorMsg, setErrorMsg]     = useState('');
+
+  // Randevu alma state'leri
+  const [apptDate, setApptDate]     = useState('');
+  const [apptTitle, setApptTitle]   = useState('');
+  const [apptNotes, setApptNotes]   = useState('');
 
   const isActive = callStatus === 'active';
   const isCalling = callStatus === 'calling';
 
-  // Müşteri + geçmiş çek
+  // Müşteri + geçmiş yükle ve randevu başlığı ön tanımla
   useEffect(() => {
     if (!callPhone) return;
-    setCustomer(null); setHistory([]); setDisp(''); setNote(''); setSaved(false);
+    
+    // Reset states for a new call
+    setCustomer(null);
+    setHistory([]);
+    setDisp('');
+    setNote('');
+    setSaved(false);
+    setApptDate('');
+    setApptTitle('');
+    setApptNotes('');
+    setErrorMsg('');
 
     axios.get('/api/customers', { params: { search: callPhone, limit: 1 } })
-      .then(({ data }) => { if (data.data?.[0]) setCustomer(data.data[0]); })
-      .catch(() => {});
+      .then(({ data }) => {
+        if (data.data?.[0]) {
+          const cust = data.data[0];
+          setCustomer(cust);
+          setApptTitle(`${cust.name} ${cust.surname || ''} - Arama Randevusu`.trim());
+        } else {
+          setApptTitle(`${callPhone} - Arama Randevusu`);
+        }
+      })
+      .catch(() => {
+        setApptTitle(`${callPhone} - Arama Randevusu`);
+      });
 
     axios.get(`/api/calls/by-phone/${encodeURIComponent(callPhone)}`)
       .then(({ data }) => setHistory(data))
       .catch(() => {});
   }, [callPhone]);
 
+  // Görüşme sonucunu kaydet
   const saveDisposition = useCallback(async (disp, keepOpen = false) => {
     if (!callLogId && !callPhone) return;
+    setErrorMsg('');
+
+    // Randevu alanları doğrulaması
+    if (disp === 'appointment') {
+      if (!apptDate) {
+        setErrorMsg('Lütfen randevu tarih ve saatini seçin.');
+        return;
+      }
+      if (!apptTitle.trim()) {
+        setErrorMsg('Lütfen randevu başlığını doldurun.');
+        return;
+      }
+    }
+
+    // Tekrar arama alanı doğrulaması
+    if (disp === 'callback' && !callbackAt) {
+      setErrorMsg('Lütfen tekrar arama tarihini seçin.');
+      return;
+    }
+
     setSaving(true);
     try {
       const target = callLogId || history[0]?.id;
@@ -121,19 +170,46 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
           callback_at: disp === 'callback' && callbackAt ? new Date(callbackAt).toISOString() : undefined,
         });
       }
-      if (!keepOpen) setSaved(true);
-    } catch {}
-    finally { setSaving(false); }
-  }, [callLogId, callPhone, disposition, note, callbackAt, history]);
+
+      // Eğer "Randevu Alındı" seçildiyse randevu kaydı oluştur
+      if (disp === 'appointment' && apptDate) {
+        await createAppointment({
+          customer_phone: callPhone,
+          customer_name: customer ? `${customer.name} ${customer.surname || ''}`.trim() : callPhone,
+          customer_id: customer?.id || null,
+          title: apptTitle.trim(),
+          notes: apptNotes || note || null,
+          scheduled_at: new Date(apptDate).toISOString(),
+        });
+        
+        // Randevular listesini güncelle
+        await fetchAppointments({ date: 'today' });
+      }
+
+      if (!keepOpen) {
+        setSaved(true);
+        setPostCallOpen(false); // Paneli kapat!
+      }
+    } catch (err) {
+      console.error('Kaydetme hatası:', err);
+      setErrorMsg('Kaydetme sırasında bir sunucu hatası oluştu.');
+    } finally {
+      setSaving(false);
+    }
+  }, [callLogId, callPhone, disposition, note, callbackAt, history, apptDate, apptTitle, apptNotes, customer, createAppointment, fetchAppointments]);
 
   const handleHangup = async () => {
-    if (disposition) await saveDisposition(disposition, true);
+    if (disposition) {
+      // Aktif çağrıyı kapatırken sonucu kaydet ama ekranı açık tut (keepOpen = true)
+      await saveDisposition(disposition, true);
+    }
     hangup();
     onHangup?.();
   };
 
   const handleDisp = (key) => {
     setDisp(key);
+    setErrorMsg('');
     if (key !== 'callback') setCallbackAt('');
   };
 
@@ -145,13 +221,9 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
     } catch {}
   };
 
-  // Çağrı bittikten sonra paneli açık tut (5 sn)
+  // Çağrı bittikten sonra paneli açık tut (Artık otomatik kapanma süresi YOK, tamamen manuel kapatılabiliyor)
   const [postCallOpen, setPostCallOpen] = useState(false);
   useEffect(() => {
-    if (!session && postCallOpen) {
-      const id = setTimeout(() => setPostCallOpen(false), 8000);
-      return () => clearTimeout(id);
-    }
     if (session) setPostCallOpen(true);
   }, [session]);
 
@@ -176,14 +248,26 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
             callEnded ? 'bg-slate-400' : isActive ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400 animate-pulse'
           }`} />
           <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
-            {callEnded ? 'Çağrı Bitti' : isActive ? 'Aktif Çağrı' : 'Arıyor...'}
+            {callEnded ? 'Görüşme Sonlandırıldı' : isActive ? 'Aktif Çağrı' : 'Arıyor...'}
           </span>
         </div>
-        <CallTimer active={isActive && !callEnded} />
+        <div className="flex items-center gap-3">
+          <CallTimer active={isActive && !callEnded} />
+          {/* Arama kapandıktan sonra manuel kapatma butonu (X) */}
+          {callEnded && (
+            <button
+              onClick={() => setPostCallOpen(false)}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-200/50 transition-colors"
+              title="Kapat"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {/* ── Müşteri ── */}
+        {/* ── Müşteri Bilgileri ── */}
         <div className="px-5 py-4 border-b border-slate-100">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
@@ -217,7 +301,7 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
           </div>
         </div>
 
-        {/* ── Sonuç seç ── */}
+        {/* ── Sonuç Seçenekleri ── */}
         <div className="px-5 py-4 border-b border-slate-100">
           <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Görüşme Sonucu</div>
           <div className="grid grid-cols-2 gap-2">
@@ -226,6 +310,7 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
               return (
                 <button
                   key={key}
+                  type="button"
                   onClick={() => handleDisp(key)}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all ${
                     isSelected
@@ -240,7 +325,7 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
             })}
           </div>
 
-          {/* Callback datetime */}
+          {/* Callback datetime (Tekrar Ara) */}
           <AnimatePresence>
             {disposition === 'callback' && (
               <motion.div
@@ -249,7 +334,7 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden mt-3"
               >
-                <label className="block text-xs font-medium text-slate-500 mb-1.5">Tekrar Arama Tarihi</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1.5">Tekrar Arama Tarihi *</label>
                 <input
                   type="datetime-local"
                   value={callbackAt}
@@ -259,9 +344,57 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Integrated Appointment Form (Randevu Alındı) */}
+          <AnimatePresence>
+            {disposition === 'appointment' && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden mt-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl space-y-3"
+              >
+                <div className="text-xs font-semibold text-blue-800 flex items-center gap-1.5">
+                  <Calendar size={13} />
+                  <span>Hızlı Randevu Kaydı</span>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-600 mb-1">Randevu Tarih ve Saati *</label>
+                  <input
+                    type="datetime-local"
+                    value={apptDate}
+                    onChange={e => setApptDate(e.target.value)}
+                    required
+                    className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-600 mb-1">Randevu Başlığı *</label>
+                  <input
+                    type="text"
+                    value={apptTitle}
+                    onChange={e => setApptTitle(e.target.value)}
+                    placeholder="Randevu Başlığı"
+                    required
+                    className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-400 placeholder:text-slate-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-600 mb-1">Randevu Özel Notu</label>
+                  <textarea
+                    value={apptNotes}
+                    onChange={e => setApptNotes(e.target.value)}
+                    placeholder="Randevu hakkında ek açıklama..."
+                    rows={2}
+                    className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-2 text-xs text-slate-900 resize-none focus:outline-none focus:border-blue-400 placeholder:text-slate-400"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* ── Not ── */}
+        {/* ── Görüşme Notu ── */}
         <div className="px-5 py-4 border-b border-slate-100">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Görüşme Notu</span>
@@ -276,7 +409,15 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
           />
         </div>
 
-        {/* ── Geçmiş aramalar ── */}
+        {/* ── Hata ve Uyarı Gösterimi ── */}
+        {errorMsg && (
+          <div className="mx-5 my-3 p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-xs text-red-600">
+            <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* ── Geçmiş Aramalar ── */}
         {history.length > 0 && (
           <div className="px-5 py-4">
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
@@ -289,9 +430,9 @@ export default function CallInfoPanel({ callLogId, onHangup, compact = false }) 
         )}
       </div>
 
-      {/* ── Alt kontroller ── */}
+      {/* ── Alt Kontroller ── */}
       <div className="px-5 py-4 border-t border-slate-100 space-y-2">
-        {/* Transfer */}
+        {/* Transfer Paneli */}
         <AnimatePresence>
           {showTransfer && (
             <motion.div
