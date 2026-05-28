@@ -91,7 +91,7 @@ function AgentPerformanceTable({ period }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs font-medium text-slate-500 bg-slate-50 border-b border-slate-100">
-            {['#', 'Çalışan', 'Dahili', 'Toplam', 'Cevaplanan', 'Gelen', 'Giden', 'Ort. Süre', 'Yanıt Oranı'].map(h => (
+            {['#', 'Çalışan', 'Dahili', 'Toplam', 'Cevaplanan', 'İlgileniyor', 'Gelen', 'Giden', 'Ort. Süre', 'Yanıt Oranı'].map(h => (
               <th key={h} className="px-4 py-3">{h}</th>
             ))}
           </tr>
@@ -111,6 +111,7 @@ function AgentPerformanceTable({ period }) {
               <td className="px-4 py-3 font-mono text-xs text-slate-500">{a.extension}</td>
               <td className="px-4 py-3 font-bold text-slate-900 tabular-nums">{a.total}</td>
               <td className="px-4 py-3 text-emerald-700 tabular-nums">{a.answered}</td>
+              <td className="px-4 py-3 text-teal-600 font-semibold tabular-nums">{a.interested || 0}</td>
               <td className="px-4 py-3 text-blue-600 tabular-nums">{a.inbound}</td>
               <td className="px-4 py-3 text-violet-600 tabular-nums">{a.outbound}</td>
               <td className="px-4 py-3 font-mono text-xs text-slate-500 tabular-nums">{formatDuration(a.avg_duration)}</td>
@@ -128,7 +129,7 @@ function AgentPerformanceTable({ period }) {
             </tr>
           ))}
           {data.length === 0 && (
-            <tr><td colSpan={9} className="px-4 py-10 text-center text-slate-400 text-sm">Veri yok</td></tr>
+            <tr><td colSpan={10} className="px-4 py-10 text-center text-slate-400 text-sm">Veri yok</td></tr>
           )}
         </tbody>
       </table>
@@ -139,8 +140,8 @@ function AgentPerformanceTable({ period }) {
 export default function Reports() {
   const history = useCallStore(s => s.callHistory);
   const fetchHistory = useCallStore(s => s.fetchHistory);
-  const stats = useCallStore(s => s.todayStats);
-  const fetchTodayStats = useCallStore(s => s.fetchTodayStats);
+  
+  const [stats, setStats] = useState({ total: 0, answered: 0, missed: 0, avg_duration: 0 });
   const [phone, setPhone] = useState('');
   const [period, setPeriod] = useState('today');
 
@@ -151,8 +152,13 @@ export default function Reports() {
 
   useEffect(() => {
     fetchHistory();
-    fetchTodayStats();
   }, []);
+
+  useEffect(() => {
+    axios.get('/api/reports/stats', { params: { period } })
+      .then(({ data }) => setStats(data))
+      .catch(() => {});
+  }, [period]);
 
   const search = () => fetchHistory({ phone: phone || undefined });
 
@@ -199,7 +205,7 @@ export default function Reports() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Bugün Toplam', value: total, icon: BarChart2, color: 'bg-slate-100 text-slate-600' },
+          { label: `${period === 'today' ? 'Bugün' : period === 'week' ? 'Bu Hafta' : period === 'month' ? 'Bu Ay' : 'Tüm Zamanlar'} Toplam`, value: total, icon: BarChart2, color: 'bg-slate-100 text-slate-600' },
           { label: 'Cevaplanan', value: answered, icon: PhoneIncoming, color: 'bg-emerald-50 text-emerald-600' },
           { label: 'Cevapsız', value: Number(stats?.missed || 0), icon: PhoneMissed, color: 'bg-red-50 text-red-500' },
           { label: 'Yanıt Oranı', value: `%${rate}`, icon: PhoneOutgoing, color: 'bg-blue-50 text-blue-600' },
@@ -218,7 +224,12 @@ export default function Reports() {
 
       {/* Period toggle */}
       <div className="flex items-center gap-2">
-        {[{ key: 'today', label: 'Bugün' }, { key: 'week', label: 'Bu Hafta' }].map(p => (
+        {[
+          { key: 'today', label: 'Bugün' },
+          { key: 'week', label: 'Bu Hafta' },
+          { key: 'month', label: 'Bu Ay' },
+          { key: 'all', label: 'Tüm Zamanlar' }
+        ].map(p => (
           <button
             key={p.key}
             onClick={() => setPeriod(p.key)}

@@ -36,12 +36,25 @@ router.get('/cdr/export', async (req, res) => {
 
 router.get('/stats', async (req, res) => {
   try {
-    const { startDate, stopDate } = req.query;
+    const { startDate, stopDate, period = 'today' } = req.query;
     if (startDate && stopDate) {
       const result = await netgsm.getCallStats({ startDate, stopDate });
       return res.json(result);
     }
-    const result = await calls.getTodayStats();
+    const where = period === 'all' ? "1=1"
+      : period === 'month' ? "created_at >= NOW() - INTERVAL '30 days'"
+      : period === 'week' ? "created_at >= NOW() - INTERVAL '7 days'"
+      : "DATE(created_at) = CURRENT_DATE";
+
+    const result = await pool.query(`
+      SELECT
+        COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE status = 'answered')::int as answered,
+        COUNT(*) FILTER (WHERE status = 'missed')::int as missed,
+        COALESCE(ROUND(AVG(duration) FILTER (WHERE duration IS NOT NULL))::int, 0) as avg_duration
+      FROM call_logs
+      WHERE ${where}
+    `);
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -100,8 +113,9 @@ router.patch('/call/:id/notes', async (req, res) => {
 router.get('/dispositions', async (req, res) => {
   try {
     const { period = 'today' } = req.query;
-    const where = period === 'week'
-      ? "created_at >= NOW() - INTERVAL '7 days'"
+    const where = period === 'all' ? "1=1"
+      : period === 'month' ? "created_at >= NOW() - INTERVAL '30 days'"
+      : period === 'week' ? "created_at >= NOW() - INTERVAL '7 days'"
       : "DATE(created_at) = CURRENT_DATE";
     const result = await pool.query(`
       SELECT disposition, COUNT(*)::int AS count
@@ -118,14 +132,16 @@ router.get('/dispositions', async (req, res) => {
 router.get('/agent-performance', async (req, res) => {
   try {
     const { period = 'today' } = req.query;
-    const where = period === 'week'
-      ? "cl.created_at >= NOW() - INTERVAL '7 days'"
+    const where = period === 'all' ? "1=1"
+      : period === 'month' ? "cl.created_at >= NOW() - INTERVAL '30 days'"
+      : period === 'week' ? "cl.created_at >= NOW() - INTERVAL '7 days'"
       : "DATE(cl.created_at) = CURRENT_DATE";
     const result = await pool.query(`
       SELECT
         a.id, a.name, a.extension,
         COUNT(cl.id)::int AS total,
         COUNT(cl.id) FILTER (WHERE cl.status = 'answered')::int AS answered,
+        COUNT(cl.id) FILTER (WHERE cl.disposition = 'interested')::int AS interested,
         COUNT(cl.id) FILTER (WHERE cl.direction = 'inbound')::int AS inbound,
         COUNT(cl.id) FILTER (WHERE cl.direction = 'outbound')::int AS outbound,
         COALESCE(ROUND(AVG(cl.duration) FILTER (WHERE cl.duration > 0))::int, 0) AS avg_duration,
